@@ -41,7 +41,6 @@ public class ForegroundService extends Service {
 
 //    private int count = 0;
 
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -53,6 +52,11 @@ public class ForegroundService extends Service {
         return START_NOT_STICKY;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        task.cancel(true);
+    }
 
     private void updateNotification(String date){
         if(notificationManager.getNotificationChannel(FOREGROUND_SERVICE_CHANNEL_ID) == null){
@@ -60,12 +64,13 @@ public class ForegroundService extends Service {
         }
 
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), FOREGROUND_SERVICE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.bat_100)
                 .setContentText("App is Running: " + date )
                 .setContentTitle("NightlyNudge")
                 .setChannelId(FOREGROUND_SERVICE_CHANNEL_ID)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setNotificationSilent()
+                .setOngoing(true)
                 .build();
 
         notificationManager.notify(1, notification);
