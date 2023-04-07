@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -30,8 +31,11 @@ public class SleepSettingActivity extends AppCompatActivity {
 
     //컴포넌트 선언
     private TimePicker timePicker;
-    private Button settingBtn;
+    private Button saveBtn;
+    private Button cancelBtn;
     private TextView timeTextView;
+    private NumberPicker hourPicker;
+    private NumberPicker minPicker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +47,18 @@ public class SleepSettingActivity extends AppCompatActivity {
         // 컴포넌트 선언
         timePicker = findViewById(R.id.timePicker);
         timeTextView = findViewById(R.id.timeTextView);
-        settingBtn = findViewById(R.id.serviceBtn);
+        saveBtn = findViewById(R.id.saveBtn);
+        cancelBtn = findViewById(R.id.cancelBtn);
+        hourPicker = findViewById(R.id.sleepHourPricker);
+        minPicker = findViewById(R.id.sleepMinPricker);
+
+        hourPicker.setMaxValue(23);
+        minPicker.setMaxValue(59);
 
         // 캐시 데이터 불러오기
         timeData = getSharedPreferences("timeData", MODE_PRIVATE);
 
-        if(timeData.getInt("mySleepHour", -1) != -1){
+        if(timeData.getInt("myWakeHour", -1) != -1){
             // 저장되어있는 취침 시각 load
             loadTime();
         }
@@ -58,7 +68,8 @@ public class SleepSettingActivity extends AppCompatActivity {
             checkPermission();
         }
 
-        settingBtn.setOnClickListener(new View.OnClickListener() {
+        // 저장 버튼에 대한 event 등록
+        saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "starting foreground service...", Toast.LENGTH_LONG).show();
@@ -66,11 +77,37 @@ public class SleepSettingActivity extends AppCompatActivity {
                 startForegroundService();
             }
         });
+
+        cancelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "초기화 완료", Toast.LENGTH_LONG).show();
+                eraseSetting();
+            }
+        });
     }
 
     private void startForegroundService() {
         serviceIntent = new Intent(this, ForegroundService.class);
         startService(serviceIntent);
+    }
+
+    private boolean eraseSetting(){
+        SharedPreferences.Editor editor = timeData.edit();
+
+        if (editor == null) {
+            return false;
+        }
+        // 저장된 value 들 default 값으로 초기화
+        editor.putInt("myWakeHour", -1);        // 지정된 기상시각 중 hour 초기화
+        editor.putInt("myWakeMin", -1);         // 지정된 기상시각 중 minute 초기화
+        editor.putInt("mySleepHour", -1);       // 지정된 수면시간 중 hour 초기화
+        editor.putInt("mySleepMin", -1);        // 지정된 수면시간 중 minute 초기화
+        editor.apply();
+
+        stopService(serviceIntent);
+
+        return true;
     }
 
     /**
@@ -83,13 +120,18 @@ public class SleepSettingActivity extends AppCompatActivity {
         int hour24 = timePicker.getHour();
         int minute = timePicker.getMinute();
 
+        int sleepHour24 = hourPicker.getValue();
+        int sleepMin = minPicker.getValue();
+
         if(editor == null){
             return false;
         }
 
         //TimePicker 에서 설정된 시각 저장
-        editor.putInt("mySleepHour", hour24);     // 지정된 Hour 저장
-        editor.putInt("mySleepMin", minute);    // 지정된 Minute 저장
+        editor.putInt("myWakeHour", hour24);        // 지정된 기상시각 중 hour 저장
+        editor.putInt("myWakeMin", minute);         // 지정된 기상시각 중 minute 저장
+        editor.putInt("mySleepHour", sleepHour24);  // 지정된 수면시간 중 hour 저장
+        editor.putInt("mySleepMin", sleepMin);      // 지정된 수면시간 중 minute 저장
         editor.apply();
 
         if (minute < 10){
@@ -107,15 +149,25 @@ public class SleepSettingActivity extends AppCompatActivity {
      * @return 반환 정상 시 True
      */
     private boolean loadTime(){
+        // 기상 시각 정보 load
+        int hour24 = timeData.getInt("myWakeHour", -1);
+        int minute = timeData.getInt("myWakeMin", -1);
 
-        int hour24 = timeData.getInt("mySleepHour", -1);
-        int minute = timeData.getInt("mySleepMin", -1);
+        // 수면시간 정보 load
+        int sleepHour24 = timeData.getInt("mySleepHour", -1);
+        int sleepMin = timeData.getInt("mySleepMin", -1);
 
         if (minute < 10){
             timeTextView.setText("매일 " + hour24 + "시 0" + minute +"분");
         }else{
             timeTextView.setText("매일 " + hour24 + "시 " + minute +"분");
         }
+
+        timePicker.setHour(hour24);
+        timePicker.setMinute(minute);
+
+        hourPicker.setValue(sleepHour24);
+        minPicker.setValue(sleepMin);
 
         return true;
     }
