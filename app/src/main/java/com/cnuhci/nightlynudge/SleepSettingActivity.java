@@ -143,11 +143,6 @@ public class SleepSettingActivity extends AppCompatActivity {
         editor.putBoolean("isSet", true);
         editor.apply();
 
-//        if (wakeMin < 10){
-//            timeTextView.setText("매일 " + sleepHour24 + "시 0" + wakeMin +"분");
-//        }else{
-//            timeTextView.setText("매일 " + sleepHour24 + "시 " + wakeMin +"분");
-//        }
 
         return true;
     }
@@ -172,11 +167,6 @@ public class SleepSettingActivity extends AppCompatActivity {
 
         timeTextView.setText("총 수면 시간: " + totalHour + "시간 " + totalMin + "분");
 
-//        if (wakeMin < 10){
-//            timeTextView.setText("매일 " + wakeHour24 + "시 0" + wakeMin +"분");
-//        }else{
-//            timeTextView.setText("매일 " + wakeHour24 + "시 " + wakeMin +"분");
-//        }
 
         sleepTimePicker.setHour(sleepHour24);
         sleepTimePicker.setMinute(sleepMin);

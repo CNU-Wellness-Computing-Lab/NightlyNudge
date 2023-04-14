@@ -29,7 +29,9 @@
             android:name=".SleepSettingActivity"
             android:exported="false"
             android:label="@string/title_activity_sleep_setting"
-            android:theme="@style/Theme.NightlyNudge.NoActionBar">
+            android:theme="@style/Theme.NightlyNudge.NoActionBar"
+            android:screenOrientation="portrait"
+            >
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
