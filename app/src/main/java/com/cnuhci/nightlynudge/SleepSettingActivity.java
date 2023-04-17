@@ -12,6 +12,7 @@ import com.cnuhci.nightlynudge.service.ForegroundService;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -42,12 +43,18 @@ public class SleepSettingActivity extends AppCompatActivity {
     private Button cancelBtn;
     private TextView timeTextView;
 
+//    public static CSV csv = new CSV();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO); // night mode 차단
 
         setContentView(R.layout.activity_sleep_setting);
+
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
+                .detectLeakedClosableObjects()
+                .build());
 
         // 컴포넌트 선언
         sleepTimePicker = findViewById(R.id.sleepTimePicker);
@@ -74,7 +81,7 @@ public class SleepSettingActivity extends AppCompatActivity {
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "starting foreground service...", Toast.LENGTH_LONG).show();
+//                Toast.makeText(getApplicationContext(), "starting foreground service...", Toast.LENGTH_LONG).show();
                 setSleepTime(); // 취침 시각 설정
                 startForegroundService();
             }
@@ -83,8 +90,12 @@ public class SleepSettingActivity extends AppCompatActivity {
         cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "초기화 완료", Toast.LENGTH_LONG).show();
-                eraseSetting();
+                if(eraseSetting()){
+                    Toast.makeText(getApplicationContext(), "초기화 완료", Toast.LENGTH_LONG).show();
+                }else{
+                    Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
+
+                }
             }
         });
     }

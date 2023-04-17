@@ -19,6 +19,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import com.cnuhci.nightlynudge.CSV;
+import com.cnuhci.nightlynudge.Data;
 import com.cnuhci.nightlynudge.R;
 import com.cnuhci.nightlynudge.SleepSettingActivity;
 
@@ -33,8 +35,6 @@ public class ForegroundService extends Service {
     public static final String INITIATION_NOTIFY_CHANNEL_ID = "InitiationNotificationChannelId";
 
     private NotificationManager notificationManager;
-
-
 
     public static SharedPreferences timeData;
 
@@ -202,6 +202,9 @@ public class ForegroundService extends Service {
 
         Log.d("TEST", "current time from Locale: " + formatter.format(today).toString());
 
+        // csv 데이터 타임 스템프 기록
+        Data.TIMESTAMP = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", currentLocale).format(today);
+
         try {
             currentDate = formatter.parse(formatter.format(today).toString());
             long currentTime = currentDate.getTime();
@@ -267,6 +270,7 @@ public class ForegroundService extends Service {
 
                     if (currentDiff <= preparationTime) {
                         if (checkDisplayOn()) {
+                            Data.WINDOW_ON = "on";
                             totalUsageTime += 1;
                         }
                     } else {
@@ -280,13 +284,17 @@ public class ForegroundService extends Service {
                                 + " | 상태: " + prevStatus
                                 + " | 용량: " + prevCapacity) ;
 
+                        Data.ACTION = "preparation";
+
                         if(!isInitiated){
                             // 수면 배터리 활성화 시작 알림
+                            Data.ALARM = "activated";
                             notifyBatteryInitiation(null);
                             isInitiated = true;
                         }
 
                         if(!prevStatus.equals(checkBattStatus(totalUsageTime))){
+                            Data.ALARM = "change";
                             notifyBatteryChange(null);
                         }
                         prevStatus = checkBattStatus(totalUsageTime);
@@ -296,6 +304,7 @@ public class ForegroundService extends Service {
 
                         // 사용자의 시간 변동에 의하여 활성화 알림이 없는 경우, 알림
                         if(!isInitiated){
+                            Data.ALARM = "activated";
                             notifyBatteryInitiation(null);
                             isInitiated = true;
                         }
@@ -307,6 +316,7 @@ public class ForegroundService extends Service {
                         if(!prevStatus.equals(checkBattStatus(totalUsageTime))
                                 || prevCapacity != calcBattCapacity(usageTimeInSleepTime * 1000,
                                 totalSleepTime, prevStatus)){
+                            Data.ALARM = "change";
                             notifyBatteryChange(null);
                         }
 
@@ -317,7 +327,8 @@ public class ForegroundService extends Service {
                         Log.d("TEST", "현재는 수면 시간입니다. 전체 사용 시간: " + totalUsageTime
                                 + " | 수면 시간에 사용 시간: " + usageTimeInSleepTime
                                 + " | 상태: " + prevStatus
-                                + " | 용량: " + prevCapacity) ;
+                                + " | 용량: " + prevCapacity);
+                        Data.ACTION = "sleep";
 
                         updateNotification(prevStatus, prevCapacity);
 
@@ -329,7 +340,9 @@ public class ForegroundService extends Service {
                         Log.d("TEST", "현재는 활동 시간입니다. 전체 사용 시간: " + totalUsageTime
                                 + " | 수면 시간에 사용 시간: " + usageTimeInSleepTime
                                 + " | 상태: " + prevStatus
-                                + " | 용량: " + prevCapacity) ;
+                                + " | 용량: " + prevCapacity);
+                        Data.ACTION = "awake";
+
                         updateNotification(prevStatus, prevCapacity);
                     }
 
@@ -337,12 +350,41 @@ public class ForegroundService extends Service {
                         mySleepTimer -= 1;
                     }
 
-
+                    saveCSV(totalUsageTime, usageTimeInSleepTime, prevStatus, prevCapacity);
                     Thread.sleep(1000);
                 } catch (InterruptedException ex) {
                 }
             }
             return 0;
+        }
+
+        private boolean saveCSV(long _totalUsageTime, long _usageTimeInSleepTime, String _status, int _capacity){
+            Data.SLEEP_TIME = timeData.getInt("mySleepHour", -1) + ":"+timeData.getInt("mySleepMin", -1);
+            Data.WAKE_TIME = timeData.getInt("myWakeHour", -1) + ":" + timeData.getInt("myWakeMin", -1);
+            Data.TOTAL_USAGE_TIME = _totalUsageTime + "";
+            Data.BEDTIME_USAGE_TIME = _usageTimeInSleepTime + "";
+            Data.BATTERY_STATUS = _status;
+            Data.BATTERY_PERCENTAGE = _capacity + "";
+            Data.WINDOW_ON = "none";
+            CSV.writeCSV(null);
+            changeCSVDefault();
+
+            return true;
+        }
+
+        private boolean changeCSVDefault(){
+            Data.TIMESTAMP = "";
+            Data.SLEEP_TIME = "";
+            Data.WAKE_TIME = "";
+            Data.BATTERY_STATUS = "";
+            Data.BATTERY_PERCENTAGE = "";
+            Data.BEDTIME_USAGE_TIME = "";
+            Data.TOTAL_USAGE_TIME = "";
+            Data.WINDOW_ON = "";
+            Data.ALARM = "none";
+            Data.ACTION = "none";
+
+            return true;
         }
 
 
@@ -418,7 +460,7 @@ public class ForegroundService extends Service {
                     grad = 1.0F;
             }
 
-            int returnVal =  (int)(100 - grad * slop * u_t);
+            int returnVal =  (int)(Math.ceil(100 - grad * slop * u_t));
 
             if(returnVal < 0){
                 returnVal = 0;
