@@ -1,5 +1,7 @@
 package com.cnuhci.nightlynudge.service;
 
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -15,6 +17,8 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -137,11 +141,11 @@ public class ForegroundService extends Service {
             message = _message;
         }
 
-        Notification notification = new NotificationCompat.Builder(getApplicationContext(), STATUS_NOTIFY_CHANNEL_ID)
+        Notification notification = new NotificationCompat.Builder(getApplicationContext(), INITIATION_NOTIFY_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_foreground)
                 .setContentTitle("NightlyNudge")
                 .setContentText(message)
-                .setChannelId(STATUS_NOTIFY_CHANNEL_ID)
+                .setChannelId(INITIATION_NOTIFY_CHANNEL_ID)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .build();
 
@@ -239,6 +243,7 @@ public class ForegroundService extends Service {
         boolean isInitiated = false;
         boolean isStateChanged = false;
 
+
 //        long totalUsageTime =  30l * 60 + 43; //test
 //        long usageTimeInSleepTime = 30l * 60; // test
 
@@ -251,12 +256,16 @@ public class ForegroundService extends Service {
             int prevCapacity = 100;         // 이전 수면의 잔량 기록
 
             while (isCancelled() == false) {
-                // TODO: 수면 취침 준비 시간 도입 시, 알림 추가 ==> "취침 준비 시간입니다."
                 try {
+
                     // check 초기화
                     if (!timeData.getBoolean("isSet", true)) {
                         cancel(true);
                         break;
+                    }
+
+                    if (checkDisplayOn()){
+                        Data.WINDOW_ON = "on";
                     }
 
                     Log.d("TEST", "running in background... | time: " + mySleepTimer);
@@ -278,7 +287,7 @@ public class ForegroundService extends Service {
 
                     if (currentDiff <= preparationTime) {
                         if (checkDisplayOn()) {
-                            Data.WINDOW_ON = "on";
+//                            Data.WINDOW_ON = "on";
                             totalUsageTime += 1;
                         }
                     } else {
@@ -302,7 +311,7 @@ public class ForegroundService extends Service {
                         }
 
                         if (!prevStatus.equals(checkBattStatus(totalUsageTime))) {
-                            Data.ALARM = "change";
+                            Data.ALARM = "quality";
                             notifyBatteryChange("당신의 수면 품질이 감소하였습니다.");
                         }
                         prevStatus = checkBattStatus(totalUsageTime);
@@ -318,7 +327,7 @@ public class ForegroundService extends Service {
                         }
 
                         if (checkDisplayOn()) {
-                            Data.WINDOW_ON = "on";
+//                            Data.WINDOW_ON = "on";
                             usageTimeInSleepTime += 1;
                         }
 
@@ -330,17 +339,22 @@ public class ForegroundService extends Service {
                             if (calcBattCapacity(usageTimeInSleepTime * 1000,
                                     totalSleepTime, prevStatus, isStateChanged, prevCapacity) % 5 == 0
                                     || !prevStatus.equals(checkBattStatus(totalUsageTime))) {
-                                Data.ALARM = "change";
 
-                                if(!prevStatus.equals(checkBattStatus(totalUsageTime)))
+                                if(!prevStatus.equals(checkBattStatus(totalUsageTime)) && !checkBattStatus(totalUsageTime).equals("green"))
                                 {
+                                    Data.ALARM = "quality";
                                     notifyBatteryChange("수면의 품질이 감소하였습니다.");
                                 }
                                 if(calcBattCapacity(usageTimeInSleepTime * 1000,
                                         totalSleepTime, prevStatus, isStateChanged, prevCapacity) % 5 == 0){
                                     notifyBatteryChange("당신의 예상 스태미나는 " + calcBattCapacity(usageTimeInSleepTime * 1000, +
-                                                                                    totalSleepTime, prevStatus, isStateChanged, prevCapacity) % 5
+                                                                                    totalSleepTime, prevStatus, isStateChanged, prevCapacity)
                                             + "% 입니다.");
+                                    if (Data.ALARM.equals("quality")){
+                                        Data.ALARM = "quality and capacity";
+                                    }else{
+                                        Data.ALARM = "capacity";
+                                    }
                                 }
                             }
                             // 배터리의 상태가 변화될 때 새로운 그래프 연산을 위해 부울 변수 변화
@@ -412,8 +426,8 @@ public class ForegroundService extends Service {
             Data.BATTERY_PERCENTAGE = "";
             Data.BEDTIME_USAGE_TIME = "";
             Data.TOTAL_USAGE_TIME = "";
-            Data.WINDOW_ON = "";
-            Data.ALARM = "off";
+            Data.WINDOW_ON = "off";
+            Data.ALARM = "none";
             Data.ACTION = "none";
 
             return true;
@@ -488,7 +502,7 @@ public class ForegroundService extends Service {
                     grad = 2.0F;
                     break;
                 case "red":
-                    grad = 4.0F;
+                    grad = 2.5F;
                     break;
                 default:
                     grad = 1.0F;

@@ -92,6 +92,7 @@ public class SleepSettingActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if(eraseSetting()){
                     Toast.makeText(getApplicationContext(), "초기화 완료", Toast.LENGTH_LONG).show();
+
                 }else{
                     Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
 
@@ -99,6 +100,67 @@ public class SleepSettingActivity extends AppCompatActivity {
             }
         });
     }
+
+    private boolean saveCSV(String _action) {
+        getCurrentDateTime();
+        Data.SLEEP_TIME = "-1";
+        Data.WAKE_TIME = "-1";
+        Data.TOTAL_USAGE_TIME = "-1";
+        Data.BEDTIME_USAGE_TIME = "-1";
+        Data.BATTERY_STATUS = "-1";
+        Data.BATTERY_PERCENTAGE ="-1";
+        Data.ACTION = _action;
+        Data.WINDOW_ON = "on";
+        CSV.writeCSV(null);
+        changeCSVDefault();
+
+        return true;
+    }
+
+    /**
+     * 현재 시간 정보에 대해 계산
+     *
+     * @return 현재 시간 정보
+     */
+    public static long getCurrentDateTime() {
+        Date today = new Date();
+        Date currentDate;
+        Locale currentLocale = new Locale("KOREAN", "KOREA");
+        String pattern = "HH:mm:ss"; //hhmmss로 시간,분,초만 뽑기도 가능
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern,
+                currentLocale);
+
+        Log.d("TEST", "current time from Locale: " + formatter.format(today).toString());
+
+        // csv 데이터 타임 스템프 기록
+        Data.TIMESTAMP = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", currentLocale).format(today);
+
+        try {
+            currentDate = formatter.parse(formatter.format(today).toString());
+            long currentTime = currentDate.getTime();
+            Log.d("TEST", "current time :" + currentTime);
+            return currentTime;
+        } catch (ParseException e) {
+        }
+
+        return -1l;
+    }
+
+    private boolean changeCSVDefault() {
+        Data.TIMESTAMP = "";
+        Data.SLEEP_TIME = "";
+        Data.WAKE_TIME = "";
+        Data.BATTERY_STATUS = "";
+        Data.BATTERY_PERCENTAGE = "";
+        Data.BEDTIME_USAGE_TIME = "";
+        Data.TOTAL_USAGE_TIME = "";
+        Data.WINDOW_ON = "off";
+        Data.ALARM = "none";
+        Data.ACTION = "none";
+
+        return true;
+    }
+
 
     private void startForegroundService() {
         serviceIntent = new Intent(this, ForegroundService.class);
@@ -123,6 +185,8 @@ public class SleepSettingActivity extends AppCompatActivity {
         timeTextView.setText("설정된 시간이 없는 상태입니다.");
 
         stopService(serviceIntent);
+
+        saveCSV("init");
 
         return true;
     }
