@@ -121,7 +121,7 @@ public class ForegroundService extends Service {
 
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), STATUS_NOTIFY_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_foreground)
-                .setContentTitle("NightlyNudge")
+                .setContentTitle("SleepBattery")
                 .setContentText(message)
                 .setChannelId(STATUS_NOTIFY_CHANNEL_ID)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -143,7 +143,7 @@ public class ForegroundService extends Service {
 
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), INITIATION_NOTIFY_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_foreground)
-                .setContentTitle("NightlyNudge")
+                .setContentTitle("sleepBattery")
                 .setContentText(message)
                 .setChannelId(INITIATION_NOTIFY_CHANNEL_ID)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
