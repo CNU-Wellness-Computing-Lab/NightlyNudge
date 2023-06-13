@@ -92,8 +92,8 @@ public class ForegroundService extends Service {
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), FOREGROUND_SERVICE_CHANNEL_ID)
                 .setSmallIcon(iconimage)
                 .setLargeIcon(iconBitmap)
-                .setContentText(getBattStatusText(status, capacity))
-                .setContentTitle("예상 수면 및 상태")
+                .setContentText("예상 스태미나: " + capacity)
+                .setContentTitle("수면 풀질: " + getBattStatusText(status))
                 .setContentIntent(pendingIntent)
                 .setChannelId(FOREGROUND_SERVICE_CHANNEL_ID)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -173,27 +173,26 @@ public class ForegroundService extends Service {
      * 배터리 상태 정보 mapping하여 foreground service에 적용될 text
      *
      * @param status   상태 정보
-     * @param capacity 용량 정보
      * @return 매핑 결과
      */
-    private String getBattStatusText(String status, int capacity) {
+    private String getBattStatusText(String status) {
         String text = "";
         switch (status) {
             case "green":
-                text += "좋음 /";
+                text += "보통";
                 break;
             case "yellow":
-                text += "보통 /";
+                text += "나쁨";
                 break;
             case "orange":
-                text += "나쁨 /";
+                text += "매우 나쁨";
                 break;
             case "red":
-                text += "매우 나쁨 /";
+                text += "최악";
                 break;
         }
 
-        return text + " " + capacity + "%";
+        return text ;
     }
 
 
