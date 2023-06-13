@@ -57,7 +57,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="*배터리 모양의 아이콘의 색상은 당신의 수면 품질을, 용량은 다음날 당신의 스태미나를 의미합니다."
+                android:text="*배터리 모양 아이콘의 색상은 당신의 예상 수면 품질을, 용량은 다음날 예상되는 당신의 스태미나를 의미합니다."
                 android:textSize="12dp" />
         </LinearLayout>
 
